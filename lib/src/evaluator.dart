@@ -7,13 +7,13 @@ import 'package:darwin/darwin.dart';
 
 class ScheduleEvaluator
     extends PhenotypeEvaluator<Schedule, int, ScheduleEvaluatorPenalty> {
-  static const _lunchHourMin = 12;
+  static const _lunchHourMin = 11;
 
   static const _lunchHourMax = 13;
 
   final List<Session> sessions;
 
-  final int targetDays = 2;
+  final int targetDays = 5;
 
   final List<CustomEvaluator> _customEvaluators;
 

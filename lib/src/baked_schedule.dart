@@ -7,7 +7,7 @@ typedef StartTimeGenerator = DateTime Function(int dayNumber);
 
 /// An unmodifiable instance of a scheduled day.
 class BakedDay {
-  final List<BakedSession> _list = new List<BakedSession>();
+  final List<BakedSession> _list = <BakedSession>[];
 
   UnmodifiableListView<BakedSession> _listView;
 
@@ -31,11 +31,11 @@ class BakedDay {
 /// An unmodifiable instance of schedule. This is used by evaluators instead
 /// of the Schedule phenotype for convenience.
 class BakedSchedule {
-  final List<BakedSession> _list = new List<BakedSession>();
+  final List<BakedSession> _list = <BakedSession>[];
 
   final Map<int, BakedDay> _days = new Map<int, BakedDay>();
 
-  UnmodifiableListView _listView;
+  UnmodifiableListView<BakedSession> _listView;
 
   UnmodifiableMapView<int, BakedDay> _unmodifiableDays;
 
@@ -69,10 +69,10 @@ class BakedSchedule {
     }
   }
 
-  /// Start at 10am by default. Use DartConf's date (we don't care about the
+  /// Start at 8:30am by default. Use DartConf's date (we don't care about the
   /// date so it doesn't really matter yet).
   static DateTime _defaultGenerateStartTime(int dayNumber) {
-    return new DateTime.utc(2018, 1, 20 + dayNumber, 10);
+    return new DateTime.utc(2023, 2, 26 + dayNumber, 8, 30);
   }
 }
 
