@@ -69,10 +69,9 @@ class BakedSchedule {
     }
   }
 
-  /// Start at 8:30am by default. Use DartConf's date (we don't care about the
-  /// date so it doesn't really matter yet).
   static DateTime _defaultGenerateStartTime(int dayNumber) {
-    return new DateTime.utc(2023, 2, 26 + dayNumber, 8, 30);
+    // Start at 8:30am by default.
+    return new DateTime.utc(2023, 2, 25 + dayNumber, 8, 30);
   }
 }
 

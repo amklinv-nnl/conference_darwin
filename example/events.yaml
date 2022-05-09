@@ -1,15 +1,68 @@
 ---
-key1:
+IP1:
   type: keynote
-key2:
+  speaker: Bubacarr Bah
+IP2:
   type: keynote
-key3:
+  speaker: Tony Baylis
+IP3:
   type: keynote
-key4:
+  speaker: Victoria Dolean
+IP4:
   type: keynote
-key5:
+  speaker: Weinan E
+IP5:
   type: keynote
-key6:
+  speaker: Luca Heltai
+IP6:
   type: keynote
-key7:
+  speaker: Claudia Sagastizabal
+IP7:
   type: keynote
+  speaker: Jacqueline Scherpen
+IP8:
+  type: keynote
+  speaker: Uros Sikimic
+PS1:
+  type: poster
+  duration: 120
+PS2:
+  type: poster
+  duration: 120
+FLP:
+  type: panel
+  duration: 60
+PL1:
+  type: lecture
+  duration: 60
+PRZ:
+  type: prize
+  duration: 120
+PAN1:
+  type: lunch
+PAN2:
+  type: lunch
+PAN3:
+  type: lunch
+MS1:
+  type: minisymposium
+MS2:
+  type: minisymposium
+MS3:
+  type: minisymposium
+MS4:
+  type: minisymposium
+MS5:
+  type: minisymposium
+MS6:
+  type: minisymposium
+MS7:
+  type: minisymposium
+MS8:
+  type: minisymposium
+MS9:
+  type: minisymposium
+MS10:
+  type: minisymposium
+MS11:
+  type: minisymposium

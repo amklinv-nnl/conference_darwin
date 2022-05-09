@@ -13,8 +13,27 @@ main() async {
 
   yaml.forEach((key, value) {
     var length = 30;
-    if (value["type"] == "keynote") length = 75;
-    sessions.add(new Session(key, length, tags: [], avoid: [], seek: []));
+    var tags = <String>[];
+    var name = key;
+
+    // Get the name of the event
+    if (value["type"] == "keynote") name += " - " + value["speaker"];
+
+    // Get the duration of the event
+    if (value["type"] == "keynote")
+      length = 75;
+    else if (value["type"] == "lunch")
+      length = 90;
+    else if (value["type"] == "minisymposium")
+      length = 100;
+    else
+      length = value["duration"];
+
+    // Set tags
+    if (value["type"] == "lunch") tags = ["lunch"];
+    if (value["type"] == "poster") tags = ["day_end"];
+
+    sessions.add(new Session(name, length, tags: tags, avoid: []));
   });
 
   final firstGeneration =
@@ -33,7 +52,7 @@ main() async {
   final algo = new GeneticAlgorithm<Schedule, int, ScheduleEvaluatorPenalty>(
       firstGeneration, evaluator, breeder,
       printf: (_) {})
-    ..maxExperiments = 1000
+    ..maxExperiments = 100000
     ..thresholdResult = new ScheduleEvaluatorPenalty();
 
   algo.onGenerationEvaluated.listen((gen) {
@@ -49,19 +68,13 @@ main() async {
 
 void dartConfEvaluators(
     BakedSchedule schedule, ScheduleEvaluatorPenalty penalty) {
-  final firstDay = schedule.days[1];
-  if (firstDay != null) {
-    // Penalize for not ending first day at 6pm.
+  final lastDay = schedule.days[5];
+  if (lastDay != null) {
+    // Penalize for not ending last day at 1:30pm.
     final firstDayTargetEnd = new DateTime.utc(
-        firstDay.end.year, firstDay.end.month, firstDay.end.day, 18);
+        lastDay.end.year, lastDay.end.month, lastDay.end.day, 13, 30);
     penalty.constraints +=
-        firstDay.end.difference(firstDayTargetEnd).inMinutes.abs() / 10;
-
-    // Penalize for too much Flutter in the first block.
-    final firstBlock = firstDay.list.takeWhile((s) => !s.session.isBreak);
-    if (firstBlock.every((s) => s.session.tags.contains("flutter"))) {
-      penalty.repetitiveness += 0.5;
-    }
+        lastDay.end.difference(firstDayTargetEnd).inMinutes.abs() / 10;
   }
 }
 

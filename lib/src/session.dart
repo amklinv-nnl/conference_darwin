@@ -5,33 +5,33 @@ class Session {
   final String name;
   final Set<String> tags;
   final Set<String> avoid;
-  final Set<String> seek;
 
   final int length;
 
   Session(this.name, this.length,
-      {Iterable<String> tags: const [],
-        Iterable<String> avoid: const [],
-        Iterable<String> seek: const []})
+      {Iterable<String> tags: const [], Iterable<String> avoid: const []})
       : tags = new Set.from(tags),
-        avoid = new Set.from(avoid),
-        seek = new Set.from(seek);
+        avoid = new Set.from(avoid);
 
   Session.defaultDayBreak()
       : this(printBreakType(BreakType.day), 0,
-      tags: ["day_break", "break"], avoid: ["break"]);
+            tags: ["day_break", "break"], avoid: ["break"]);
 
   Session.defaultExtendedLunch()
       : this(printBreakType(BreakType.lunch), 60 + 15,
-      tags: ["lunch", "break"], avoid: ["break"]);
+            tags: ["lunch", "break"], avoid: ["break"]);
 
   Session.defaultLunch()
       : this(printBreakType(BreakType.lunch), 60,
-      tags: ["lunch", "break"], avoid: ["break"]);
+            tags: ["lunch", "break"], avoid: ["break"]);
+
+  Session.defaultCoffeeBreak()
+      : this(printBreakType(BreakType.coffee), 30,
+            tags: ["coffee", "break"], avoid: ["break"]);
 
   Session.defaultShortBreak()
-      : this(printBreakType(BreakType.short), 30,
-      tags: ["break"], avoid: ["break"]);
+      : this(printBreakType(BreakType.short), 15,
+            tags: ["break"], avoid: ["break"]);
 
   bool get isBreak => tags.contains("break");
 
@@ -40,16 +40,6 @@ class Session {
   /// Algorithm will try hard to put `day_end` talks at end of day. Use
   /// for things like lightning talks / unconferences / wrap-ups.
   bool get isDayEnd => tags.contains("day_end");
-
-  /// Algorithm will try to schedule exciting talks after food (or at start
-  /// of day) to get people going.
-  bool get isEnergetic => tags.contains("energetic");
-
-  /// Algorithm will try to schedule exciting talks at start of day so they're
-  /// not wasted in the middle of unimpressive talks.
-  ///
-  /// Or at least starts of blocks. (TODO)
-  bool get isExciting => tags.contains("exciting");
 
   /// Algorithm will try hard to put keynote at start of day 1 or at least
   /// at start of a day.

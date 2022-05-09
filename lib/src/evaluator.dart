@@ -20,11 +20,11 @@ class ScheduleEvaluator
   /// Minimal amount of time between breaks.
   final int minBlockLength = 90;
 
-  final int maxMinutesWithoutBreak = 90;
+  final int maxMinutesWithoutBreak = 200;
 
-  final int maxMinutesWithoutLargeMeal = 5 * 60;
+  final int maxMinutesWithoutLargeMeal = 6 * 60;
 
-  final int maxMinutesInDay = 8 * 60;
+  final int maxMinutesInDay = 10 * 60;
 
   final int targetLunchesPerDay = 1;
 
@@ -45,12 +45,6 @@ class ScheduleEvaluator
         // A session was left out of the program entirely.
         penalty.constraints += 50.0;
       }
-    }
-
-    if (ordered.any((s) => s.isKeynote)) {
-      // There should be a keynote early on day 1.
-      final firstKeynote = ordered.firstWhere((s) => s.isKeynote);
-      penalty.constraints += ordered.indexOf(firstKeynote).toDouble();
     }
 
     for (int i = 0; i < ordered.length; i++) {
@@ -77,9 +71,6 @@ class ScheduleEvaluator
         // Keynotes should start days.
         penalty.cultural += day.indexOf(keynoteSession) * 2.0;
       }
-      for (final excitingSession in day.where((s) => s.isExciting)) {
-        penalty.awareness += day.indexOf(excitingSession) / 2;
-      }
       for (final dayEndSession in day.where((s) => s.isDayEnd)) {
         // end_day sessions should end the day.
         penalty.constraints +=
@@ -102,10 +93,6 @@ class ScheduleEvaluator
     for (final noFoodBlock
         in phenotype.getBlocksBetweenLargeMeal(ordered, sessions)) {
       if (noFoodBlock.isEmpty) continue;
-      for (final energeticSession in noFoodBlock.where((s) => s.isEnergetic)) {
-        // Energetic sessions should be just after food.
-        penalty.awareness += noFoodBlock.indexOf(energeticSession) / 2;
-      }
       penalty.hunger += max(0,
               phenotype.getLength(noFoodBlock) - maxMinutesWithoutLargeMeal) /
           20;
@@ -118,11 +105,6 @@ class ScheduleEvaluator
           a.tags.where((tag) => b.avoid.contains(tag)).length / denominator;
       penalty.repetitiveness +=
           b.tags.where((tag) => a.avoid.contains(tag)).length / denominator;
-      // Seek according to tags.
-      penalty.harmony -=
-          a.tags.where((tag) => b.seek.contains(tag)).length / denominator;
-      penalty.harmony -=
-          b.tags.where((tag) => a.seek.contains(tag)).length / denominator;
     }
 
     for (final block in phenotype.getBlocks(ordered, sessions)) {
@@ -172,10 +154,10 @@ class ScheduleEvaluator
       }
     }
 
-    // Penalize "hairy" session times (13:45 instead of 14:00).
+    // Penalize "hairy" session times (13:05 instead of 13:00).
     for (final day in baked.days.values) {
       for (final session in day.list) {
-        if (session.time.minute % 30 != 0) {
+        if (session.time.minute % 15 != 0) {
           penalty.cultural += 0.01;
         }
       }

@@ -4,6 +4,8 @@ String printBreakType(BreakType type) {
       return "";
     case BreakType.short:
       return "-- short break --";
+    case BreakType.coffee:
+      return "-- coffee break --";
     case BreakType.lunch:
       return "== lunch break ==";
     case BreakType.day:
@@ -12,4 +14,4 @@ String printBreakType(BreakType type) {
   throw new StateError("No such type: $type");
 }
 
-enum BreakType { none, short, lunch, day }
+enum BreakType { none, short, coffee, lunch, day }

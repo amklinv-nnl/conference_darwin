@@ -1,17 +1,20 @@
 import 'dart:math';
 import 'package:conference_darwin/src/baked_schedule.dart';
+import 'package:conference_darwin/src/break_type.dart';
 import 'package:conference_darwin/src/evaluator.dart';
 import 'package:conference_darwin/src/session.dart';
 import 'package:darwin/darwin.dart';
 
 class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
-  static const int defaultSessionsPerDay = 10;
+  static const int defaultSessionsPerDay = 5;
 
-  static const int defaultSessionsBetweenBreaks = 3;
+  static const int defaultSessionsBetweenBreaks = 2;
 
   final int sessionCount;
 
   final int maxShortBreaksCount;
+
+  final int maxCoffeeBreaksCount;
 
   final int maxLunchBreaksCount;
 
@@ -35,14 +38,17 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
         maxLunchBreaksCount = (sessions.length / defaultSessionsPerDay).ceil(),
         maxExtendedLunchBreaksCount = 0,
         maxShortBreaksCount =
-        (sessions.length / defaultSessionsBetweenBreaks).ceil(),
+            (sessions.length / defaultSessionsBetweenBreaks).ceil(),
+        maxCoffeeBreaksCount =
+            (sessions.length / defaultSessionsBetweenBreaks).ceil(),
         orderRange = sessions.length * 6,
         orderRangeCutOff = sessions.length * 5 {
     _geneCount = sessionCount +
         maxDayBreaksCount +
         maxLunchBreaksCount +
         maxExtendedLunchBreaksCount +
-        maxShortBreaksCount;
+        maxShortBreaksCount +
+        maxCoffeeBreaksCount;
   }
 
   factory Schedule.random(List<Session> sessions) {
@@ -116,6 +122,13 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
     final ordered = getOrdered(sessions);
     final baked = new BakedSchedule(ordered);
     final buf = new StringBuffer();
+
+    // Print the first day
+    buf.write("\t16:45\tStudent Days Orientation\t60\n");
+    buf.write("\t17:45\tWelcome Reception\t120\n");
+    buf.write("\t19:45\t");
+    buf.write(printBreakType(BreakType.day));
+    buf.write("\t0\n");
 
     for (final slot in baked.list) {
       buf.write("\t");
@@ -192,6 +205,11 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
     for (int i = 0; i < maxShortBreaksCount; i++) {
       final shortBreak = new Session.defaultShortBreak();
       allSessions[shortBreak] = genes[geneIndex];
+      geneIndex += 1;
+    }
+    for (int i = 0; i < maxCoffeeBreaksCount; i++) {
+      final coffeeBreak = new Session.defaultCoffeeBreak();
+      allSessions[coffeeBreak] = genes[geneIndex];
       geneIndex += 1;
     }
     for (int i = 0; i < maxLunchBreaksCount; i++) {
