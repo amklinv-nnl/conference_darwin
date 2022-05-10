@@ -7,9 +7,7 @@ main() async {
   File file = new File('events.yaml');
   String yamlString = file.readAsStringSync();
   Map yaml = loadYaml(yamlString);
-  print(yaml);
 
-  final int ndays = 5;
   var sessions = <Session>[];
 
   yaml.forEach((key, value) {
@@ -62,13 +60,13 @@ main() async {
   final firstGeneration =
       new Generation<Schedule, int, ScheduleEvaluatorPenalty>()
         ..members.addAll(new List.generate(
-            200, (_) => new Schedule.random(sessions, ndays)));
+            200, (_) => new Schedule.random(sessions, NUM_DAYS)));
 
-  final evaluator = new ScheduleEvaluator(sessions, [dartConfEvaluators]);
+  final evaluator = new ScheduleEvaluator(sessions);
 
   final breeder =
       new GenerationBreeder<Schedule, int, ScheduleEvaluatorPenalty>(
-          () => new Schedule(sessions, ndays))
+          () => new Schedule(sessions, NUM_DAYS))
         ..fitnessSharingRadius = 0.5
         ..elitismCount = 1;
 
@@ -87,19 +85,6 @@ main() async {
 
   await algo.runUntilDone();
   printResults(algo.generations.last, sessions, evaluator);
-}
-
-void dartConfEvaluators(
-    BakedSchedule schedule, ScheduleEvaluatorPenalty penalty) {
-  int ndays = schedule.days.length;
-  final lastDay = schedule.days[ndays];
-  if (lastDay != null) {
-    // Penalize for not ending last day at 1:30pm.
-    final lastDayTargetEnd = new DateTime.utc(
-        lastDay.end.year, lastDay.end.month, lastDay.end.day, 13, 30);
-    penalty.constraints +=
-        lastDay.end.difference(lastDayTargetEnd).inMinutes.abs();
-  }
 }
 
 void printResults(Generation<Schedule, int, ScheduleEvaluatorPenalty> gen,

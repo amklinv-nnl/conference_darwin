@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:conference_darwin/src/baked_schedule.dart';
+import 'package:conference_darwin/src/constants.dart';
 import 'package:conference_darwin/src/schedule_phenotype.dart';
 import 'package:conference_darwin/src/session.dart';
 import 'package:darwin/darwin.dart';
@@ -12,10 +13,6 @@ class ScheduleEvaluator
   static const _lunchHourMax = 13;
 
   final List<Session> sessions;
-
-  final int targetDays = 5;
-
-  final List<CustomEvaluator> _customEvaluators;
 
   /// Minimal amount of time between breaks.
   final int minBlockLength = 60;
@@ -30,7 +27,7 @@ class ScheduleEvaluator
 
   final int targetLunchesPerDay = 1;
 
-  ScheduleEvaluator(this.sessions, this._customEvaluators);
+  ScheduleEvaluator(this.sessions);
 
   @override
   Future<ScheduleEvaluatorPenalty> evaluate(Schedule phenotype) {
@@ -63,16 +60,16 @@ class ScheduleEvaluator
     }
 
     final days = phenotype.getDays(ordered, sessions).toList(growable: false);
-    penalty.constraints += (targetDays - days.length).abs() * 100.0;
-    if (verbose && days.length != targetDays)
-      print("conference lasts ${days.length} of $targetDays days\n");
+    penalty.constraints += (NUM_DAYS - days.length).abs() * 1000.0;
+    if (verbose && days.length != NUM_DAYS)
+      print("conference lasts ${days.length} of $NUM_DAYS days\n");
 
     int dayNumber = 0;
     for (final day in days) {
       dayNumber += 1;
       if (day.isEmpty) {
         if (verbose) print("Day $day is empty\n");
-        penalty.cultural += 1.0;
+        penalty.cultural += 1000.0;
         continue;
       }
       for (final dayEndSession in day.where((s) => s.isDayEnd)) {
@@ -89,12 +86,13 @@ class ScheduleEvaluator
         penalty.constraints += 10.0;
       }
       // Only this many lunches per day. (Normally 1.)
+      var targetLunches = targetLunchesPerDay;
+      if (dayNumber == days.length && FINAL_HALF_DAY) targetLunches = 0;
       penalty.cultural +=
-          (targetLunchesPerDay - day.where((s) => s.isLunch).length).abs() *
-              100.0;
-      if (verbose && day.where((s) => s.isLunch).length != targetLunchesPerDay)
+          (targetLunches - day.where((s) => s.isLunch).length).abs() * 100.0;
+      if (verbose && day.where((s) => s.isLunch).length != targetLunches)
         print(
-            "Day $dayNumber should have $targetLunchesPerDay lunches but have ${day.where((s) => s.isLunch).length}\n");
+            "Day $dayNumber should have $targetLunches lunches but have ${day.where((s) => s.isLunch).length}\n");
       // Keep the days not too long.
       penalty.awareness +=
           max(0, phenotype.getLength(day) - maxMinutesInDay) / 30;
@@ -188,14 +186,11 @@ class ScheduleEvaluator
     }
 
     final baked = new BakedSchedule(ordered);
-    // Penalize when last day is longer than previous days.
+
+    // Penalize when last day is too long.
     final lastDay = baked.days[baked.days.length];
-    for (int i = 1; i < baked.days.length; i++) {
-      final diff = (baked.days[i].duration - lastDay.duration).inMinutes;
-      if (diff > 0) {
-        penalty.cultural += diff / 10;
-      }
-    }
+    var diff = lastDay.end.difference(END_TIME).inMinutes.abs();
+    if (diff > 0) penalty.constraints += diff;
 
     // Lunch hour should start at a culturally appropriate time.
     for (final bakedDay in baked.days.values) {
@@ -224,10 +219,6 @@ class ScheduleEvaluator
         penalty.dna += 0.1;
       }
       usedOrderIndexes.add(order);
-    }
-
-    for (final evaluator in _customEvaluators) {
-      evaluator(baked, penalty);
     }
 
     return penalty;

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:conference_darwin/src/baked_schedule.dart';
 import 'package:conference_darwin/src/break_type.dart';
+import 'package:conference_darwin/src/constants.dart';
 import 'package:conference_darwin/src/evaluator.dart';
 import 'package:conference_darwin/src/session.dart';
 import 'package:darwin/darwin.dart';
@@ -10,9 +11,9 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
 
   final int nDayBreaks;
 
-  final int maxExtraLunchCount;
+  int maxExtraLunchCount;
 
-  final int maxCoffeeBreaksCount;
+  int maxCoffeeBreaksCount;
 
   final int orderRange;
 
@@ -32,6 +33,11 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
         maxCoffeeBreaksCount = 2 * dayCount,
         orderRange = sessions.length * 6,
         orderRangeCutOff = sessions.length * 5 {
+    if (FINAL_HALF_DAY) {
+      if (maxExtraLunchCount > 0) maxExtraLunchCount--;
+      maxCoffeeBreaksCount--;
+    }
+
     maxShortBreaksCount = sessionCount -
         nDayBreaks -
         maxExtraLunchCount -

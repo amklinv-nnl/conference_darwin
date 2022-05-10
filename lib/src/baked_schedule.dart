@@ -1,6 +1,7 @@
 /// Schedule with exact times.
 import 'dart:collection';
 
+import 'package:conference_darwin/src/constants.dart';
 import 'package:conference_darwin/src/session.dart';
 
 typedef StartTimeGenerator = DateTime Function(int dayNumber);
@@ -71,7 +72,7 @@ class BakedSchedule {
 
   static DateTime _defaultGenerateStartTime(int dayNumber) {
     // Start at 8:30am by default.
-    return new DateTime.utc(2023, 2, 25 + dayNumber, 8, 30);
+    return START_TIME.add(Duration(days: dayNumber - 1));
   }
 }
 
