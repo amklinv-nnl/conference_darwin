@@ -15,6 +15,7 @@ main() async {
     var length = 30;
     var tags = <String>[];
     var name = key;
+    var avoid = <String>[];
 
     // Get the name of the event
     if (value["type"] == "keynote") name += " - " + value["speaker"];
@@ -22,30 +23,30 @@ main() async {
     // Get the duration of the event
     if (value["type"] == "keynote")
       length = 75;
-    else if (value["type"] == "lunch")
-      length = 90;
-    else if (value["type"] == "minisymposium")
-      length = 100;
-    else
-      length = value["duration"];
+    else if (value["type"] == "lunch") length = 90;
+    if (value["duration"] != null) length = value["duration"];
 
     // Set tags
-    if (value["type"] == "lunch") tags = ["lunch"];
+    if (value["type"] == "keynote") tags = ["keynote"];
+    if (value["type"] == "lunch") tags = ["lunch", "break"];
     if (value["type"] == "poster") tags = ["day_end"];
 
-    sessions.add(new Session(name, length, tags: tags, avoid: []));
+    // Set avoid
+    if (value["type"] == "lunch") avoid = ["break"];
+
+    sessions.add(new Session(name, length, tags: tags, avoid: avoid));
   });
 
   final firstGeneration =
       new Generation<Schedule, int, ScheduleEvaluatorPenalty>()
         ..members.addAll(
-            new List.generate(200, (_) => new Schedule.random(sessions)));
+            new List.generate(200, (_) => new Schedule.random(sessions, 11)));
 
   final evaluator = new ScheduleEvaluator(sessions, [dartConfEvaluators]);
 
   final breeder =
       new GenerationBreeder<Schedule, int, ScheduleEvaluatorPenalty>(
-          () => new Schedule(sessions))
+          () => new Schedule(sessions, 11))
         ..fitnessSharingRadius = 0.5
         ..elitismCount = 1;
 
@@ -59,11 +60,11 @@ main() async {
     if (algo.currentGeneration == 0) return;
     if (algo.currentGeneration % 100 != 0) return;
 
-    printResults(gen, sessions);
+    printResults(gen, sessions, evaluator);
   });
 
   await algo.runUntilDone();
-  printResults(algo.generations.last, sessions);
+  printResults(algo.generations.last, sessions, evaluator);
 }
 
 void dartConfEvaluators(
@@ -79,11 +80,12 @@ void dartConfEvaluators(
 }
 
 void printResults(Generation<Schedule, int, ScheduleEvaluatorPenalty> gen,
-    List<Session> sessions) {
+    List<Session> sessions, ScheduleEvaluator evaluator) {
   final lastGeneration = new List<Schedule>.from(gen.members);
   lastGeneration.sort();
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 1; i++) {
     final specimen = lastGeneration[i];
+    evaluator.internalEvaluate(specimen, verbose: true);
     print("======= Winner $i ("
         "pareto rank ${specimen.result.paretoRank} "
         "fitness ${specimen.result.evaluate().toStringAsFixed(2)} "

@@ -30,7 +30,8 @@ PS2:
   type: poster
   duration: 120
 FLP:
-  type: panel
+  type: keynote
+  speaker: forward looking panel
   duration: 60
 PL1:
   type: lecture
@@ -44,25 +45,3 @@ PAN2:
   type: lunch
 PAN3:
   type: lunch
-MS1:
-  type: minisymposium
-MS2:
-  type: minisymposium
-MS3:
-  type: minisymposium
-MS4:
-  type: minisymposium
-MS5:
-  type: minisymposium
-MS6:
-  type: minisymposium
-MS7:
-  type: minisymposium
-MS8:
-  type: minisymposium
-MS9:
-  type: minisymposium
-MS10:
-  type: minisymposium
-MS11:
-  type: minisymposium

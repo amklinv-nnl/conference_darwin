@@ -35,7 +35,8 @@ class ScheduleEvaluator
     return new Future.value(internalEvaluate(phenotype));
   }
 
-  ScheduleEvaluatorPenalty internalEvaluate(Schedule phenotype) {
+  ScheduleEvaluatorPenalty internalEvaluate(Schedule phenotype,
+      {bool verbose: false}) {
     final penalty = new ScheduleEvaluatorPenalty();
 
     final ordered = phenotype.getOrdered(sessions);
@@ -43,10 +44,22 @@ class ScheduleEvaluator
     for (final session in sessions) {
       if (!ordered.contains(session)) {
         // A session was left out of the program entirely.
+        if (verbose)
+          print(session.name + " was left out of the program entirely\n");
         penalty.constraints += 50.0;
       }
     }
 
+    // Make sure the desired number of minisymposia were scheduled
+    penalty.constraints += 10 *
+        (ordered.where((s) => s.isMinisymposium).length -
+                phenotype.numMinisymposia)
+            .abs();
+    if (verbose &&
+        ordered.where((s) => s.isMinisymposium).length !=
+            phenotype.numMinisymposia)
+      print(
+          "Want ${phenotype.numMinisymposia} minisymposia but have ${ordered.where((s) => s.isMinisymposium).length}\n");
     for (int i = 0; i < ordered.length; i++) {
       for (int j = i + 1; j < ordered.length; j++) {
         final first = ordered[i];
@@ -58,23 +71,25 @@ class ScheduleEvaluator
     }
 
     final days = phenotype.getDays(ordered, sessions).toList(growable: false);
-    penalty.constraints += (targetDays - days.length).abs() * 10.0;
+    penalty.constraints += (targetDays - days.length).abs() * 100.0;
+    if (verbose && days.length != targetDays)
+      print("conference lasts ${days.length} of $targetDays days\n");
 
     int dayNumber = 0;
     for (final day in days) {
       dayNumber += 1;
       if (day.isEmpty) {
+        if (verbose) print("Day $day is empty\n");
         penalty.cultural += 1.0;
         continue;
-      }
-      for (final keynoteSession in day.where((s) => s.isKeynote)) {
-        // Keynotes should start days.
-        penalty.cultural += day.indexOf(keynoteSession) * 2.0;
       }
       for (final dayEndSession in day.where((s) => s.isDayEnd)) {
         // end_day sessions should end the day.
         penalty.constraints +=
             (day.length - day.indexOf(dayEndSession) - 1) * 2.0;
+        if (verbose && day.indexOf(dayEndSession) < day.length - 1)
+          print(
+              "Session ${dayEndSession.name} should end a day but does not\n");
       }
       for (final otherDayPreferredSession in day.where(
           (s) => s.preferredDay != null && s.preferredDay != dayNumber)) {
@@ -84,18 +99,37 @@ class ScheduleEvaluator
       // Only this many lunches per day. (Normally 1.)
       penalty.cultural +=
           (targetLunchesPerDay - day.where((s) => s.isLunch).length).abs() *
-              10.0;
+              100.0;
+      if (verbose && day.where((s) => s.isLunch).length != targetLunchesPerDay)
+        print(
+            "Day $dayNumber should have $targetLunchesPerDay lunches but have ${day.where((s) => s.isLunch).length}\n");
       // Keep the days not too long.
       penalty.awareness +=
           max(0, phenotype.getLength(day) - maxMinutesInDay) / 30;
+      if (verbose && phenotype.getLength(day) > maxMinutesInDay)
+        print(
+            "Day $dayNumber should be $maxMinutesInDay minutes but is ${phenotype.getLength(day)}\n");
     }
 
     for (final noFoodBlock
         in phenotype.getBlocksBetweenLargeMeal(ordered, sessions)) {
       if (noFoodBlock.isEmpty) continue;
+
+      for (final keynoteSession in noFoodBlock.where((s) => s.isKeynote)) {
+        // Keynotes should start days or be after lunch.
+        penalty.cultural += noFoodBlock.indexOf(keynoteSession) * 50.0;
+        if (verbose && noFoodBlock.indexOf(keynoteSession) > 0)
+          print(
+              "Keynote ${keynoteSession.name} has index ${noFoodBlock.indexOf(keynoteSession)}\n");
+      }
+
       penalty.hunger += max(0,
               phenotype.getLength(noFoodBlock) - maxMinutesWithoutLargeMeal) /
           20;
+      if (verbose &&
+          phenotype.getLength(noFoodBlock) > maxMinutesWithoutLargeMeal)
+        print(
+            "Going without food for ${phenotype.getLength(noFoodBlock)} of $maxMinutesWithoutLargeMeal minutes\n");
     }
 
     void penalizeSeekAvoid(Session a, Session b) {
@@ -105,6 +139,9 @@ class ScheduleEvaluator
           a.tags.where((tag) => b.avoid.contains(tag)).length / denominator;
       penalty.repetitiveness +=
           b.tags.where((tag) => a.avoid.contains(tag)).length / denominator;
+
+      if (verbose && a.tags.where((tag) => b.avoid.contains(tag)).length > 0)
+        print("Sessions ${a.name} and ${b.name} should not be adjacent\n");
     }
 
     for (final block in phenotype.getBlocks(ordered, sessions)) {
@@ -115,8 +152,15 @@ class ScheduleEvaluator
         penalty.awareness += blockLength - maxMinutesWithoutBreak;
       }
       penalty.awareness += max(0, blockLength - maxMinutesWithoutBreak) / 10;
+      if (verbose && blockLength > maxMinutesWithoutBreak)
+        printf("Block is $blockLength of $maxMinutesWithoutBreak minutes\n");
+
       // Avoid blocks that are too short.
       penalty.cultural += max(0, minBlockLength - blockLength) / 10;
+
+      if (verbose && blockLength < minBlockLength)
+        printf("Block is $blockLength of $minBlockLength minutes\n");
+
       for (final a in block) {
         for (final b in block) {
           if (a == b) continue;
@@ -131,9 +175,6 @@ class ScheduleEvaluator
 
       penalizeSeekAvoid(a, b);
     }
-
-    // For two similar schedules, the one that needs less slots should win.
-    penalty.awareness += phenotype.getLength(ordered) / 100;
 
     final baked = new BakedSchedule(ordered);
     // Penalize when last day is longer than previous days.
@@ -150,6 +191,8 @@ class ScheduleEvaluator
       for (final baked in bakedDay.list) {
         if (!baked.session.isLunch) continue;
         final distance = _getDistanceFromLunchHour(baked.time);
+        if (verbose && distance.inMinutes.abs() > 0)
+          printf("Lunch is ${distance.inMinutes.abs()} minutes from ideal\n");
         penalty.cultural += distance.inMinutes.abs() / 20;
       }
     }

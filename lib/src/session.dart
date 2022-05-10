@@ -13,6 +13,9 @@ class Session {
       : tags = new Set.from(tags),
         avoid = new Set.from(avoid);
 
+  Session.defaultMinisymposia(int num)
+      : this("MS $num", 100, tags: ["minisymposium"]);
+
   Session.defaultDayBreak()
       : this(printBreakType(BreakType.day), 0,
             tags: ["day_break", "break"], avoid: ["break"]);
@@ -41,9 +44,13 @@ class Session {
   /// for things like lightning talks / unconferences / wrap-ups.
   bool get isDayEnd => tags.contains("day_end");
 
+  bool get isConferenceEnd => tags.contains("conference_end");
+
   /// Algorithm will try hard to put keynote at start of day 1 or at least
   /// at start of a day.
   bool get isKeynote => tags.contains("keynote");
+
+  bool get isMinisymposium => tags.contains("minisymposium");
 
   bool get isLunch => tags.contains("lunch");
 
