@@ -6,9 +6,11 @@ import 'package:conference_darwin/src/session.dart';
 import 'package:darwin/darwin.dart';
 
 class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
-  static const int defaultSessionsPerDay = 5;
+  static const int defaultSessionsPerDay = 3;
 
   static const int defaultSessionsBetweenBreaks = 2;
+
+  final int numMinisymposia;
 
   final int sessionCount;
 
@@ -31,8 +33,9 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
 
   final _random = new Random();
 
-  Schedule(List<Session> sessions)
+  Schedule(List<Session> sessions, int numMinisymposia)
       : sessionCount = sessions.length,
+        numMinisymposia = numMinisymposia,
         maxDayBreaksCount =
             (sessions.length / defaultSessionsPerDay).ceil() - 1,
         maxLunchBreaksCount = (sessions.length / defaultSessionsPerDay).ceil(),
@@ -44,6 +47,7 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
         orderRange = sessions.length * 6,
         orderRangeCutOff = sessions.length * 5 {
     _geneCount = sessionCount +
+        numMinisymposia +
         maxDayBreaksCount +
         maxLunchBreaksCount +
         maxExtendedLunchBreaksCount +
@@ -51,8 +55,8 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
         maxCoffeeBreaksCount;
   }
 
-  factory Schedule.random(List<Session> sessions) {
-    final schedule = new Schedule(sessions);
+  factory Schedule.random(List<Session> sessions, int numMinisymposia) {
+    final schedule = new Schedule(sessions, numMinisymposia);
     schedule.genes = new List<int>(schedule._geneCount);
     for (int i = 0; i < schedule._geneCount; i++) {
       schedule.genes[i] = schedule._random.nextInt(schedule.orderRange);
@@ -200,6 +204,11 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
     final allSessions = new Map<Session, int>();
     for (int i = 0; i < original.length; i++) {
       allSessions[original[i]] = genes[geneIndex];
+      geneIndex += 1;
+    }
+    for (int i = 0; i < numMinisymposia; i++) {
+      final ms = new Session.defaultMinisymposia(i + 1);
+      allSessions[ms] = genes[geneIndex];
       geneIndex += 1;
     }
     for (int i = 0; i < maxShortBreaksCount; i++) {
