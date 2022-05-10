@@ -6,57 +6,47 @@ import 'package:conference_darwin/src/session.dart';
 import 'package:darwin/darwin.dart';
 
 class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
-  static const int defaultSessionsPerDay = 3;
-
-  static const int defaultSessionsBetweenBreaks = 2;
-
-  final int numMinisymposia;
-
   final int sessionCount;
 
-  final int maxShortBreaksCount;
+  final int nDayBreaks;
+
+  final int maxExtraLunchCount;
 
   final int maxCoffeeBreaksCount;
-
-  final int maxLunchBreaksCount;
-
-  final int maxExtendedLunchBreaksCount;
-
-  final int maxDayBreaksCount;
 
   final int orderRange;
 
   /// Order above this value will not appear in the program.
   final int orderRangeCutOff;
 
+  int maxShortBreaksCount;
+
   int _geneCount;
 
   final _random = new Random();
 
-  Schedule(List<Session> sessions, int numMinisymposia)
+  Schedule(List<Session> sessions, int dayCount)
       : sessionCount = sessions.length,
-        numMinisymposia = numMinisymposia,
-        maxDayBreaksCount =
-            (sessions.length / defaultSessionsPerDay).ceil() - 1,
-        maxLunchBreaksCount = (sessions.length / defaultSessionsPerDay).ceil(),
-        maxExtendedLunchBreaksCount = 0,
-        maxShortBreaksCount =
-            (sessions.length / defaultSessionsBetweenBreaks).ceil(),
-        maxCoffeeBreaksCount =
-            (sessions.length / defaultSessionsBetweenBreaks).ceil(),
+        nDayBreaks = dayCount - 1,
+        maxExtraLunchCount = dayCount - sessions.where((s) => s.isLunch).length,
+        maxCoffeeBreaksCount = 2 * dayCount,
         orderRange = sessions.length * 6,
         orderRangeCutOff = sessions.length * 5 {
+    maxShortBreaksCount = sessionCount -
+        nDayBreaks -
+        maxExtraLunchCount -
+        maxCoffeeBreaksCount -
+        1;
+
     _geneCount = sessionCount +
-        numMinisymposia +
-        maxDayBreaksCount +
-        maxLunchBreaksCount +
-        maxExtendedLunchBreaksCount +
+        nDayBreaks +
+        maxExtraLunchCount +
         maxShortBreaksCount +
         maxCoffeeBreaksCount;
   }
 
-  factory Schedule.random(List<Session> sessions, int numMinisymposia) {
-    final schedule = new Schedule(sessions, numMinisymposia);
+  factory Schedule.random(List<Session> sessions, int dayCount) {
+    final schedule = new Schedule(sessions, dayCount);
     schedule.genes = new List<int>(schedule._geneCount);
     for (int i = 0; i < schedule._geneCount; i++) {
       schedule.genes[i] = schedule._random.nextInt(schedule.orderRange);
@@ -132,9 +122,11 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
     buf.write("\t17:45\tWelcome Reception\t120\n");
     buf.write("\t19:45\t");
     buf.write(printBreakType(BreakType.day));
-    buf.write("\t0\n");
+    buf.write("\t0\n\n");
 
     for (final slot in baked.list) {
+      //if (slot.session.isShortBreak) continue;
+
       buf.write("\t");
       final hour = slot.time.hour;
       final minute = slot.time.minute.toString().padLeft(2, '0');
@@ -144,6 +136,8 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
       buf.write("\t");
       buf.write(slot.session.length);
       buf.writeln();
+
+      if (slot.session.isDayBreak) buf.writeln();
     }
     return buf.toString();
   }
@@ -206,11 +200,6 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
       allSessions[original[i]] = genes[geneIndex];
       geneIndex += 1;
     }
-    for (int i = 0; i < numMinisymposia; i++) {
-      final ms = new Session.defaultMinisymposia(i + 1);
-      allSessions[ms] = genes[geneIndex];
-      geneIndex += 1;
-    }
     for (int i = 0; i < maxShortBreaksCount; i++) {
       final shortBreak = new Session.defaultShortBreak();
       allSessions[shortBreak] = genes[geneIndex];
@@ -221,17 +210,12 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
       allSessions[coffeeBreak] = genes[geneIndex];
       geneIndex += 1;
     }
-    for (int i = 0; i < maxLunchBreaksCount; i++) {
+    for (int i = 0; i < maxExtraLunchCount; i++) {
       final lunch = new Session.defaultLunch();
       allSessions[lunch] = genes[geneIndex];
       geneIndex += 1;
     }
-    for (int i = 0; i < maxExtendedLunchBreaksCount; i++) {
-      final lunch = new Session.defaultExtendedLunch();
-      allSessions[lunch] = genes[geneIndex];
-      geneIndex += 1;
-    }
-    for (int i = 0; i < maxDayBreaksCount; i++) {
+    for (int i = 0; i < nDayBreaks; i++) {
       final dayBreak = new Session.defaultDayBreak();
       allSessions[dayBreak] = genes[geneIndex];
       geneIndex += 1;

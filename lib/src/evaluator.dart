@@ -18,9 +18,9 @@ class ScheduleEvaluator
   final List<CustomEvaluator> _customEvaluators;
 
   /// Minimal amount of time between breaks.
-  final int minBlockLength = 90;
+  final int minBlockLength = 60;
 
-  final int maxMinutesWithoutBreak = 200;
+  final int maxMinutesWithoutBreak = 120;
 
   final int maxMinutesWithoutLargeMeal = 6 * 60;
 
@@ -50,16 +50,6 @@ class ScheduleEvaluator
       }
     }
 
-    // Make sure the desired number of minisymposia were scheduled
-    penalty.constraints += 10 *
-        (ordered.where((s) => s.isMinisymposium).length -
-                phenotype.numMinisymposia)
-            .abs();
-    if (verbose &&
-        ordered.where((s) => s.isMinisymposium).length !=
-            phenotype.numMinisymposia)
-      print(
-          "Want ${phenotype.numMinisymposia} minisymposia but have ${ordered.where((s) => s.isMinisymposium).length}\n");
     for (int i = 0; i < ordered.length; i++) {
       for (int j = i + 1; j < ordered.length; j++) {
         final first = ordered[i];
@@ -139,8 +129,15 @@ class ScheduleEvaluator
           a.tags.where((tag) => b.avoid.contains(tag)).length / denominator;
       penalty.repetitiveness +=
           b.tags.where((tag) => a.avoid.contains(tag)).length / denominator;
+      // Seek according to tags.
+      penalty.harmony -=
+          a.tags.where((tag) => b.seek.contains(tag)).length / denominator;
+      penalty.harmony -=
+          b.tags.where((tag) => a.seek.contains(tag)).length / denominator;
 
       if (verbose && a.tags.where((tag) => b.avoid.contains(tag)).length > 0)
+        print("Sessions ${a.name} and ${b.name} should not be adjacent\n");
+      if (verbose && b.tags.where((tag) => a.avoid.contains(tag)).length > 0)
         print("Sessions ${a.name} and ${b.name} should not be adjacent\n");
     }
 

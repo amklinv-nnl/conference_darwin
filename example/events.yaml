@@ -1,47 +1,57 @@
 ---
-IP1:
+Bubacarr Bah:
   type: keynote
-  speaker: Bubacarr Bah
-IP2:
+Tony Baylis:
   type: keynote
-  speaker: Tony Baylis
-IP3:
+Victoria Dolean:
   type: keynote
-  speaker: Victoria Dolean
-IP4:
+Weinan E:
   type: keynote
-  speaker: Weinan E
-IP5:
+Luca Heltai:
   type: keynote
-  speaker: Luca Heltai
-IP6:
+Claudia Sagastizabal:
   type: keynote
-  speaker: Claudia Sagastizabal
-IP7:
+Jacqueline Scherpen:
   type: keynote
-  speaker: Jacqueline Scherpen
-IP8:
+Uros Sikimic:
   type: keynote
-  speaker: Uros Sikimic
-PS1:
+Poster Session 1:
   type: poster
-  duration: 120
-PS2:
+Poster Session 2:
   type: poster
-  duration: 120
-FLP:
-  type: keynote
-  speaker: forward looking panel
+Lunch Panel 1:
+  type: lunch
+Lunch Panel 2:
+  type: lunch
+Lunch Panel 3:
+  type: lunch
+MS1:
+  type: minisymposium
+MS2:
+  type: minisymposium
+MS3:
+  type: minisymposium
+MS4:
+  type: minisymposium
+MS5:
+  type: minisymposium
+MS6:
+  type: minisymposium
+MS7:
+  type: minisymposium
+MS8:
+  type: minisymposium
+MS9:
+  type: minisymposium
+MS10:
+  type: minisymposium
+MS11:
+  type: minisymposium
+Forward Looking Panel:
   duration: 60
-PL1:
-  type: lecture
-  duration: 60
-PRZ:
-  type: prize
+  tags: ["not_final_day"]
+#PL1:
+#  duration: 60
+Prizes:
   duration: 120
-PAN1:
-  type: lunch
-PAN2:
-  type: lunch
-PAN3:
-  type: lunch
+  tags: ["final_day", "day_end"]

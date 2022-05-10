@@ -9,44 +9,66 @@ main() async {
   Map yaml = loadYaml(yamlString);
   print(yaml);
 
+  final int ndays = 5;
   var sessions = <Session>[];
 
   yaml.forEach((key, value) {
-    var length = 30;
-    var tags = <String>[];
-    var name = key;
-    var avoid = <String>[];
+    String type;
+    if (value.containsKey("type"))
+      type = value["type"];
+    else
+      type = "unknown";
 
-    // Get the name of the event
-    if (value["type"] == "keynote") name += " - " + value["speaker"];
+    // Set default duration
+    int duration;
+    if (value.containsKey("duration"))
+      duration = value["duration"];
+    else if (DURATIONS.containsKey(type))
+      duration = DURATIONS[type];
+    else
+      duration = DURATIONS["default"];
 
-    // Get the duration of the event
-    if (value["type"] == "keynote")
-      length = 75;
-    else if (value["type"] == "lunch") length = 90;
-    if (value["duration"] != null) length = value["duration"];
+    // Set default tags
+    List<String> tags;
+    if (value.containsKey("tags"))
+      tags = value["tags"].toList().cast<String>();
+    else if (TAGS.containsKey(type))
+      tags = TAGS[type];
+    else
+      tags = TAGS["default"];
 
-    // Set tags
-    if (value["type"] == "keynote") tags = ["keynote"];
-    if (value["type"] == "lunch") tags = ["lunch", "break"];
-    if (value["type"] == "poster") tags = ["day_end"];
+    // Set default seek
+    List<String> seek;
+    if (value.containsKey("seek"))
+      seek = value["seek"].toList().cast<String>();
+    else if (SEEK.containsKey(type))
+      seek = SEEK[type];
+    else
+      seek = SEEK["default"];
 
-    // Set avoid
-    if (value["type"] == "lunch") avoid = ["break"];
+    // Set default avoid
+    List<String> avoid;
+    if (value.containsKey("avoid"))
+      avoid = value["avoid"].toList().cast<String>();
+    else if (AVOID.containsKey(type))
+      avoid = AVOID[type];
+    else
+      avoid = AVOID["default"];
 
-    sessions.add(new Session(name, length, tags: tags, avoid: avoid));
+    sessions
+        .add(new Session(key, duration, tags: tags, seek: seek, avoid: avoid));
   });
 
   final firstGeneration =
       new Generation<Schedule, int, ScheduleEvaluatorPenalty>()
-        ..members.addAll(
-            new List.generate(200, (_) => new Schedule.random(sessions, 11)));
+        ..members.addAll(new List.generate(
+            200, (_) => new Schedule.random(sessions, ndays)));
 
   final evaluator = new ScheduleEvaluator(sessions, [dartConfEvaluators]);
 
   final breeder =
       new GenerationBreeder<Schedule, int, ScheduleEvaluatorPenalty>(
-          () => new Schedule(sessions, 11))
+          () => new Schedule(sessions, ndays))
         ..fitnessSharingRadius = 0.5
         ..elitismCount = 1;
 
@@ -69,13 +91,14 @@ main() async {
 
 void dartConfEvaluators(
     BakedSchedule schedule, ScheduleEvaluatorPenalty penalty) {
-  final lastDay = schedule.days[5];
+  int ndays = schedule.days.length;
+  final lastDay = schedule.days[ndays];
   if (lastDay != null) {
     // Penalize for not ending last day at 1:30pm.
-    final firstDayTargetEnd = new DateTime.utc(
+    final lastDayTargetEnd = new DateTime.utc(
         lastDay.end.year, lastDay.end.month, lastDay.end.day, 13, 30);
     penalty.constraints +=
-        lastDay.end.difference(firstDayTargetEnd).inMinutes.abs() / 10;
+        lastDay.end.difference(lastDayTargetEnd).inMinutes.abs();
   }
 }
 
