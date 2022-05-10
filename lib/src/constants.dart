@@ -14,7 +14,7 @@ final Map TAGS = {
   "minisymposium": ["minisymposium"],
   "keynote": ["keynote"],
   "lunch": ["lunch", "break", "not_final_day"],
-  "poster": ["day_end", "not_final_day", "subsequent_days"],
+  "poster": ["day_end", "not_final_day", "subsequent_days", "coffee"],
   "default": <String>[]
 };
 

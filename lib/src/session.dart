@@ -36,6 +36,8 @@ class Session {
 
   bool get isBreak => tags.contains("break");
 
+  bool get isCoffee => tags.contains("coffee");
+
   bool get isShortBreak => tags.contains("short");
 
   bool get isDayBreak => tags.contains("day_break");

@@ -24,6 +24,8 @@ class ScheduleEvaluator
 
   final int maxMinutesWithoutLargeMeal = 6 * 60;
 
+  final int maxMinutesWithoutDrink = 3 * 60;
+
   final int maxMinutesInDay = 10 * 60;
 
   final int targetLunchesPerDay = 1;
@@ -99,6 +101,18 @@ class ScheduleEvaluator
       if (verbose && phenotype.getLength(day) > maxMinutesInDay)
         print(
             "Day $dayNumber should be $maxMinutesInDay minutes but is ${phenotype.getLength(day)}\n");
+    }
+
+    for (final noDrinkBlock
+        in phenotype.getBlocksBetweenDrinks(ordered, sessions)) {
+      if (noDrinkBlock.isEmpty) continue;
+
+      penalty.hunger +=
+          max(0, phenotype.getLength(noDrinkBlock) - maxMinutesWithoutDrink) /
+              20;
+      if (verbose && phenotype.getLength(noDrinkBlock) > maxMinutesWithoutDrink)
+        print(
+            "Going without drink for ${phenotype.getLength(noDrinkBlock)} of $maxMinutesWithoutDrink minutes\n");
     }
 
     for (final noFoodBlock

@@ -170,6 +170,20 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
     yield block;
   }
 
+  Iterable<List<Session>> getBlocksBetweenDrinks(
+      List<Session> ordered, List<Session> sessions) sync* {
+    var block = <Session>[];
+    for (final session in ordered) {
+      if (session.isLunch || session.isDayBreak || session.isCoffee) {
+        yield block;
+        block = <Session>[];
+        continue;
+      }
+      block.add(session);
+    }
+    yield block;
+  }
+
   Iterable<List<Session>> getDays(
       List<Session> ordered, List<Session> sessions) sync* {
     var day = <Session>[];
