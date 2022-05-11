@@ -46,11 +46,15 @@ class Session {
   /// for things like lightning talks / unconferences / wrap-ups.
   bool get isDayEnd => tags.contains("day_end");
 
-  bool get isConferenceEnd => tags.contains("conference_end");
+  bool get isFinalDay => tags.contains("final_day");
+
+  bool get notFinalDay => tags.contains("not_final_day");
 
   /// Algorithm will try hard to put keynote at start of day 1 or at least
   /// at start of a day.
   bool get isKeynote => tags.contains("keynote");
+
+  bool get isMinisymposium => tags.contains("minisymposium");
 
   bool get isLunch => tags.contains("lunch");
 

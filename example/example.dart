@@ -73,12 +73,12 @@ main() async {
   final algo = new GeneticAlgorithm<Schedule, int, ScheduleEvaluatorPenalty>(
       firstGeneration, evaluator, breeder,
       printf: (_) {})
-    ..maxExperiments = 100000
+    ..maxExperiments = 1000000
     ..thresholdResult = new ScheduleEvaluatorPenalty();
 
   algo.onGenerationEvaluated.listen((gen) {
     if (algo.currentGeneration == 0) return;
-    if (algo.currentGeneration % 100 != 0) return;
+    if (algo.currentGeneration % 10 != 0) return;
 
     printResults(gen, sessions, evaluator);
   });

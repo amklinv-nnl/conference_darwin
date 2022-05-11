@@ -14,9 +14,6 @@ class ScheduleEvaluator
 
   final List<Session> sessions;
 
-  /// Minimal amount of time between breaks.
-  final int minBlockLength = 60;
-
   final int maxMinutesWithoutBreak = 120;
 
   final int maxMinutesWithoutLargeMeal = 6 * 60;
@@ -45,7 +42,12 @@ class ScheduleEvaluator
         // A session was left out of the program entirely.
         if (verbose)
           print(session.name + " was left out of the program entirely\n");
-        penalty.constraints += 50.0;
+
+        // Missing minisymposia are only worth 200, the rest 500
+        if (session.isMinisymposium)
+          penalty.constraints += 200.0;
+        else
+          penalty.constraints += 500.0;
       }
     }
 
@@ -74,8 +76,7 @@ class ScheduleEvaluator
       }
       for (final dayEndSession in day.where((s) => s.isDayEnd)) {
         // end_day sessions should end the day.
-        penalty.constraints +=
-            (day.length - day.indexOf(dayEndSession) - 1) * 2.0;
+        penalty.constraints += 20;
         if (verbose && day.indexOf(dayEndSession) < day.length - 1)
           print(
               "Session ${dayEndSession.name} should end a day but does not\n");
@@ -107,7 +108,7 @@ class ScheduleEvaluator
 
       penalty.hunger +=
           max(0, phenotype.getLength(noDrinkBlock) - maxMinutesWithoutDrink) /
-              20;
+              2;
       if (verbose && phenotype.getLength(noDrinkBlock) > maxMinutesWithoutDrink)
         print(
             "Going without drink for ${phenotype.getLength(noDrinkBlock)} of $maxMinutesWithoutDrink minutes\n");
@@ -127,7 +128,7 @@ class ScheduleEvaluator
 
       penalty.hunger += max(0,
               phenotype.getLength(noFoodBlock) - maxMinutesWithoutLargeMeal) /
-          20;
+          2;
       if (verbose &&
           phenotype.getLength(noFoodBlock) > maxMinutesWithoutLargeMeal)
         print(
@@ -135,17 +136,16 @@ class ScheduleEvaluator
     }
 
     void penalizeSeekAvoid(Session a, Session b) {
-      const denominator = 2;
       // Avoid according to tags.
       penalty.repetitiveness +=
-          a.tags.where((tag) => b.avoid.contains(tag)).length / denominator;
+          5 * a.tags.where((tag) => b.avoid.contains(tag)).length;
       penalty.repetitiveness +=
-          b.tags.where((tag) => a.avoid.contains(tag)).length / denominator;
+          5 * b.tags.where((tag) => a.avoid.contains(tag)).length;
       // Seek according to tags.
       penalty.harmony -=
-          a.tags.where((tag) => b.seek.contains(tag)).length / denominator;
+          a.tags.where((tag) => b.seek.contains(tag)).length / 10.0;
       penalty.harmony -=
-          b.tags.where((tag) => a.seek.contains(tag)).length / denominator;
+          b.tags.where((tag) => a.seek.contains(tag)).length / 10.0;
 
       if (verbose && a.tags.where((tag) => b.avoid.contains(tag)).length > 0)
         print("Sessions ${a.name} and ${b.name} should not be adjacent\n");
@@ -160,15 +160,9 @@ class ScheduleEvaluator
         // Block is way too long.
         penalty.awareness += blockLength - maxMinutesWithoutBreak;
       }
-      penalty.awareness += max(0, blockLength - maxMinutesWithoutBreak) / 10;
+      penalty.awareness += max(0, blockLength - maxMinutesWithoutBreak) / 2;
       if (verbose && blockLength > maxMinutesWithoutBreak)
-        printf("Block is $blockLength of $maxMinutesWithoutBreak minutes\n");
-
-      // Avoid blocks that are too short.
-      penalty.cultural += max(0, minBlockLength - blockLength) / 10;
-
-      if (verbose && blockLength < minBlockLength)
-        printf("Block is $blockLength of $minBlockLength minutes\n");
+        print("Block is $blockLength of $maxMinutesWithoutBreak minutes\n");
 
       for (final a in block) {
         for (final b in block) {
@@ -192,23 +186,25 @@ class ScheduleEvaluator
     var diff = lastDay.end.difference(END_TIME).inMinutes.abs();
     if (diff > 0) penalty.constraints += diff;
 
+    // Look at all last day sessions
+    for (BakedSession bs in lastDay.list) {
+      // Reward things that were correctly scheduled on the final day
+      if (bs.session.isFinalDay) penalty.constraints -= 1.0;
+
+      // Penalize things that weren't
+      if (bs.session.notFinalDay) penalty.constraints += 10.0;
+    }
+
     // Lunch hour should start at a culturally appropriate time.
+    //print("baked.days.values.runtimeType: ${baked.days.values.runtimeType}\n");
     for (final bakedDay in baked.days.values) {
       for (final baked in bakedDay.list) {
         if (!baked.session.isLunch) continue;
         final distance = _getDistanceFromLunchHour(baked.time);
         if (verbose && distance.inMinutes.abs() > 0)
-          printf("Lunch is ${distance.inMinutes.abs()} minutes from ideal\n");
-        penalty.cultural += distance.inMinutes.abs() / 20;
-      }
-    }
-
-    // Penalize "hairy" session times (13:05 instead of 13:00).
-    for (final day in baked.days.values) {
-      for (final session in day.list) {
-        if (session.time.minute % 15 != 0) {
-          penalty.cultural += 0.01;
-        }
+          print(
+              "Lunch at ${baked.time} is ${distance.inMinutes.abs()} minutes from ideal\n");
+        penalty.cultural += distance.inMinutes.abs() / 2;
       }
     }
 
