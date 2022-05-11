@@ -155,7 +155,7 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
       List<Session> ordered, List<Session> sessions) sync* {
     var block = <Session>[];
     for (final session in ordered) {
-      if (session.isBreak) {
+      if (session.isBreak || session.isCoffee) {
         yield block;
         block = <Session>[];
         continue;
@@ -210,7 +210,10 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
   int getLength(Iterable<Session> sessions) {
     int length = 0;
     for (final session in sessions) {
-      length += session.length;
+      if (session.isPoster)
+        length += session.length ~/ 2.0;
+      else
+        length += session.length;
     }
     return length;
   }

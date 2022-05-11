@@ -54,6 +54,8 @@ class Session {
   /// at start of a day.
   bool get isKeynote => tags.contains("keynote");
 
+  bool get isPoster => tags.contains("poster");
+
   bool get isMinisymposium => tags.contains("minisymposium");
 
   bool get isLunch => tags.contains("lunch");

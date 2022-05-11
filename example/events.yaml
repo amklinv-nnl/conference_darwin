@@ -49,7 +49,7 @@ MS11:
   type: minisymposium
 Forward Looking Panel:
   duration: 60
-  tags: ["not_final_day"]
+  tags: ["keynote", "not_final_day"]
 #PL1:
 #  duration: 60
 Prizes:
