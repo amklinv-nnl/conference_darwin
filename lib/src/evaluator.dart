@@ -45,15 +45,15 @@ class ScheduleEvaluator
 
         // Missing minisymposia are only worth 200, the rest 500
         if (session.isMinisymposium)
-          penalty.constraints += 200.0;
+          penalty.constraints += MISSING_MINISYMPOSIUM;
         else
-          penalty.constraints += 500.0;
+          penalty.constraints += MISSING_SESSION;
       }
     }
 
     // Make sure conference is the correct number of days
     final days = phenotype.getDays(ordered, sessions).toList(growable: false);
-    penalty.constraints += (NUM_DAYS - days.length).abs() * 1000.0;
+    penalty.constraints += (NUM_DAYS - days.length).abs() * WRONG_DAY_COUNT;
     if (verbose && days.length != NUM_DAYS)
       print("conference lasts ${days.length} of $NUM_DAYS days\n");
 
@@ -65,10 +65,10 @@ class ScheduleEvaluator
       if (nPosterToday > 0) {
         sawPoster = true;
         penalty.constraints += potentialPenalty;
-      } else if (sawPoster) potentialPenalty += 50.0;
+      } else if (sawPoster) potentialPenalty += POSTERS_SEPARATED;
 
       // Too many poster sessions in one day
-      if (nPosterToday > 1) penalty.constraints += 50.0;
+      if (nPosterToday > 1) penalty.constraints += MULTIPLE_POSTERS_PER_DAY;
     }
 
     int dayNumber = 0;
@@ -78,14 +78,14 @@ class ScheduleEvaluator
       // Make sure no day is empty
       if (day.isEmpty) {
         if (verbose) print("Day $day is empty\n");
-        penalty.cultural += 1000.0;
+        penalty.cultural += EMPTY_DAY;
         continue;
       }
 
       // Make sure end day sessions actually end the day
       for (final dayEndSession in day.where((s) => s.isDayEnd)) {
         penalty.constraints +=
-            200 * (day.length - day.indexOf(dayEndSession) - 1);
+            SESSION_TOO_EARLY * (day.length - day.indexOf(dayEndSession) - 1);
         if (verbose && day.indexOf(dayEndSession) < day.length - 1)
           print(
               "Session ${dayEndSession.name} should end a day but does not\n");
@@ -94,15 +94,15 @@ class ScheduleEvaluator
       // Only this many lunches per day. (Normally 1.)
       var targetLunches = targetLunchesPerDay;
       if (dayNumber == days.length && FINAL_HALF_DAY) targetLunches = 0;
-      penalty.cultural +=
-          (targetLunches - day.where((s) => s.isLunch).length).abs() * 1000.0;
+      penalty.cultural += WRONG_NUM_LUNCHES *
+          (targetLunches - day.where((s) => s.isLunch).length).abs();
       if (verbose && day.where((s) => s.isLunch).length != targetLunches)
         print(
             "Day $dayNumber should have $targetLunches lunches but have ${day.where((s) => s.isLunch).length}\n");
 
       // Keep the days not too long.
       penalty.awareness +=
-          max(0, phenotype.getLength(day) - maxMinutesInDay) / 30;
+          DAY_TOO_LONG * max(0, phenotype.getLength(day) - maxMinutesInDay);
       if (verbose && phenotype.getLength(day) > maxMinutesInDay)
         print(
             "Day $dayNumber should be $maxMinutesInDay minutes but is ${phenotype.getLength(day)}\n");
@@ -113,9 +113,8 @@ class ScheduleEvaluator
         in phenotype.getBlocksBetweenDrinks(ordered, sessions)) {
       if (noDrinkBlock.isEmpty) continue;
 
-      penalty.hunger +=
-          max(0, phenotype.getLength(noDrinkBlock) - maxMinutesWithoutDrink) /
-              2;
+      penalty.hunger += TOO_THIRSTY *
+          max(0, phenotype.getLength(noDrinkBlock) - maxMinutesWithoutDrink);
       if (verbose && phenotype.getLength(noDrinkBlock) > maxMinutesWithoutDrink)
         print(
             "Going without drink for ${phenotype.getLength(noDrinkBlock)} of $maxMinutesWithoutDrink minutes: ${noDrinkBlock.first.name}\n");
@@ -127,22 +126,23 @@ class ScheduleEvaluator
 
       // Penalize incorrect number of coffee breaks (should be 1)
       int nCoffeeBreaks = noFoodBlock.where((s) => s.isCoffee).length;
-      penalty.cultural += (nCoffeeBreaks - 1).abs() * 50.0;
+      penalty.cultural += (nCoffeeBreaks - 1).abs() * WRONG_NUM_COFFEE;
 
       // Penalize incorrect number of keynotes (should be 1)
       int nKeynotes = noFoodBlock.where((s) => s.isKeynote).length;
-      penalty.cultural += (nCoffeeBreaks - 1).abs() * 50.0;
+      penalty.cultural += (nCoffeeBreaks - 1).abs() * WRONG_NUM_KEYNOTE;
 
       // Keynotes should start days or be after lunch.
       for (final keynoteSession in noFoodBlock.where((s) => s.isKeynote)) {
-        penalty.cultural += noFoodBlock.indexOf(keynoteSession) * 50.0;
+        penalty.cultural +=
+            noFoodBlock.indexOf(keynoteSession) * WRONG_TIME_KEYNOTE;
         if (verbose && noFoodBlock.indexOf(keynoteSession) > 0)
           print(
               "Keynote ${keynoteSession.name} has index ${noFoodBlock.indexOf(keynoteSession)}\n");
       }
 
       // Food should be available at regular intervals
-      penalty.hunger +=
+      penalty.hunger += TOO_HUNGRY *
           max(0, phenotype.getLength(noFoodBlock) - maxMinutesWithoutLargeMeal);
       if (verbose &&
           phenotype.getLength(noFoodBlock) > maxMinutesWithoutLargeMeal)
@@ -153,12 +153,14 @@ class ScheduleEvaluator
     void penalizeSeekAvoid(Session a, Session b) {
       // Avoid according to tags.
       penalty.repetitiveness +=
-          50 * a.tags.where((tag) => b.avoid.contains(tag)).length;
+          FAIL_TO_AVOID * a.tags.where((tag) => b.avoid.contains(tag)).length;
       penalty.repetitiveness +=
-          50 * b.tags.where((tag) => a.avoid.contains(tag)).length;
+          FAIL_TO_AVOID * b.tags.where((tag) => a.avoid.contains(tag)).length;
       // Seek according to tags.
-      penalty.harmony -= 2 * a.tags.where((tag) => b.seek.contains(tag)).length;
-      penalty.harmony -= 2 * b.tags.where((tag) => a.seek.contains(tag)).length;
+      penalty.harmony -=
+          GOOD_SEEK * a.tags.where((tag) => b.seek.contains(tag)).length;
+      penalty.harmony -=
+          GOOD_SEEK * b.tags.where((tag) => a.seek.contains(tag)).length;
 
       if (verbose && a.tags.where((tag) => b.avoid.contains(tag)).length > 0)
         print("Sessions ${a.name} and ${b.name} should not be adjacent\n");
@@ -169,7 +171,8 @@ class ScheduleEvaluator
     for (final block in phenotype.getBlocks(ordered, sessions)) {
       // Avoid blocks that are too long.
       final blockLength = phenotype.getLength(block);
-      penalty.awareness += max(0, blockLength - maxMinutesWithoutBreak);
+      penalty.awareness +=
+          BLOCK_TOO_LONG * max(0, blockLength - maxMinutesWithoutBreak);
       if (verbose && blockLength > maxMinutesWithoutBreak)
         print("Block is $blockLength of $maxMinutesWithoutBreak minutes\n");
     }
@@ -185,19 +188,16 @@ class ScheduleEvaluator
 
     // Penalize when last day is too long.
     final lastDay = baked.days[baked.days.length];
-    var diff = lastDay.end.difference(END_TIME).inMinutes.abs();
-    if (diff > 0) penalty.constraints += diff;
+    penalty.constraints +=
+        LAST_DAY_LONG * max(0.0, lastDay.end.difference(END_TIME).inMinutes);
 
     // Look at all last day sessions
     for (BakedSession bs in lastDay.list) {
       // Reward things that were correctly scheduled on the final day
-      if (bs.session.isFinalDay) penalty.constraints -= 1.0;
+      if (bs.session.isFinalDay) penalty.constraints -= GOOD_FINAL_DAY_SESSION;
 
       // Penalize things that weren't
-      if (bs.session.notFinalDay) penalty.constraints += 10.0;
-
-      // Penalize a coffee break on the last day - there just isn't time
-      if (bs.session.isCoffee) penalty.constraints += 200;
+      if (bs.session.notFinalDay) penalty.constraints += BAD_FINAL_DAY_SESSION;
     }
 
     // Lunch hour should start at a culturally appropriate time.
@@ -208,7 +208,7 @@ class ScheduleEvaluator
         if (verbose && distance.inMinutes.abs() > 0)
           print(
               "Lunch at ${baked.time} is ${distance.inMinutes.abs()} minutes from ideal\n");
-        penalty.cultural += distance.inMinutes.abs() / 2;
+        penalty.cultural += BAD_LUNCH_TIME * distance.inMinutes.abs();
       }
     }
 

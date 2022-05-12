@@ -45,3 +45,26 @@ final Map AVOID = {
   "poster": ["coffee", "short"],
   "default": <String>[]
 };
+
+// Penalties
+final MISSING_SESSION = 1.0;
+final MISSING_MINISYMPOSIUM = 1.0;
+final WRONG_DAY_COUNT = 1.0;
+final POSTERS_SEPARATED = 1.0;
+final MULTIPLE_POSTERS_PER_DAY = 1.0;
+final EMPTY_DAY = 1.0;
+final SESSION_TOO_EARLY = 1.0;
+final WRONG_NUM_LUNCHES = 1.0;
+final DAY_TOO_LONG = 1.0;
+final TOO_THIRSTY = 1.0;
+final WRONG_NUM_COFFEE = 1.0;
+final WRONG_NUM_KEYNOTE = 1.0;
+final WRONG_TIME_KEYNOTE = 1.0;
+final TOO_HUNGRY = 1.0;
+final FAIL_TO_AVOID = 1.0;
+final GOOD_SEEK = 1.0;
+final BLOCK_TOO_LONG = 1.0;
+final LAST_DAY_LONG = 1.0;
+final GOOD_FINAL_DAY_SESSION = 1.0;
+final BAD_FINAL_DAY_SESSION = 1.0;
+final BAD_LUNCH_TIME = 1.0;

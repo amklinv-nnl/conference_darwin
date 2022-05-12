@@ -11,16 +11,16 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
 
   final int nDayBreaks;
 
-  final int maxExtraLunchCount;
+  int maxExtraLunchCount;
 
-  final int maxCoffeeBreaksCount;
+  int maxCoffeeBreaksCount;
 
   final int orderRange;
 
   /// Order above this value will not appear in the program.
   final int orderRangeCutOff;
 
-  final int maxShortBreaksCount;
+  int maxShortBreaksCount;
 
   int _geneCount;
 
@@ -28,12 +28,22 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
 
   Schedule(List<Session> sessions, int dayCount)
       : sessionCount = sessions.length,
-        nDayBreaks = dayCount,
-        maxExtraLunchCount = dayCount,
+        nDayBreaks = dayCount - 1,
+        maxExtraLunchCount = dayCount - sessions.where((s) => s.isLunch).length,
         maxCoffeeBreaksCount = 2 * dayCount,
-        maxShortBreaksCount = sessions.length,
         orderRange = sessions.length * 6,
         orderRangeCutOff = sessions.length * 5 {
+    if (FINAL_HALF_DAY) {
+      maxExtraLunchCount = max(0, maxExtraLunchCount - 1);
+      maxCoffeeBreaksCount -= 2;
+    }
+
+    maxShortBreaksCount = sessionCount -
+        nDayBreaks -
+        maxExtraLunchCount -
+        maxCoffeeBreaksCount -
+        1;
+
     _geneCount = sessionCount +
         nDayBreaks +
         maxExtraLunchCount +
