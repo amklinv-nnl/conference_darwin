@@ -40,7 +40,7 @@ final Map SEEK = {
 
 final Map AVOID = {
   "minisymposium": <String>[],
-  "keynote": <String>[],
+  "keynote": <String>["keynote"],
   "lunch": ["break"],
   "poster": ["coffee", "short"],
   "default": <String>[]

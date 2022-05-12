@@ -45,8 +45,8 @@ MS9:
   type: minisymposium
 MS10:
   type: minisymposium
-MS11:
-  type: minisymposium
+#MS11:
+#  type: minisymposium
 Forward Looking Panel:
   duration: 60
   tags: ["keynote", "not_final_day"]

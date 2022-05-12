@@ -11,16 +11,16 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
 
   final int nDayBreaks;
 
-  int maxExtraLunchCount;
+  final int maxExtraLunchCount;
 
-  int maxCoffeeBreaksCount;
+  final int maxCoffeeBreaksCount;
 
   final int orderRange;
 
   /// Order above this value will not appear in the program.
   final int orderRangeCutOff;
 
-  int maxShortBreaksCount;
+  final int maxShortBreaksCount;
 
   int _geneCount;
 
@@ -28,25 +28,12 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
 
   Schedule(List<Session> sessions, int dayCount)
       : sessionCount = sessions.length,
-        nDayBreaks = dayCount - 1,
-        maxExtraLunchCount = dayCount - sessions.where((s) => s.isLunch).length,
+        nDayBreaks = dayCount,
+        maxExtraLunchCount = dayCount,
         maxCoffeeBreaksCount = 2 * dayCount,
+        maxShortBreaksCount = sessions.length,
         orderRange = sessions.length * 6,
         orderRangeCutOff = sessions.length * 5 {
-    if (FINAL_HALF_DAY) {
-      if (maxExtraLunchCount > 0) maxExtraLunchCount--;
-      maxCoffeeBreaksCount--;
-    }
-
-    int ncoffee = sessions.where((s) => s.isCoffee).length;
-
-    maxShortBreaksCount = sessionCount -
-        nDayBreaks -
-        maxExtraLunchCount -
-        maxCoffeeBreaksCount -
-        ncoffee -
-        1;
-
     _geneCount = sessionCount +
         nDayBreaks +
         maxExtraLunchCount +
@@ -155,7 +142,7 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
       List<Session> ordered, List<Session> sessions) sync* {
     var block = <Session>[];
     for (final session in ordered) {
-      if (session.isBreak || session.isCoffee) {
+      if (session.isBreak || session.isPoster) {
         yield block;
         block = <Session>[];
         continue;
@@ -183,7 +170,10 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
       List<Session> ordered, List<Session> sessions) sync* {
     var block = <Session>[];
     for (final session in ordered) {
-      if (session.isLunch || session.isDayBreak || session.isCoffee) {
+      if (session.isLunch ||
+          session.isDayBreak ||
+          session.isCoffee ||
+          session.isPoster) {
         yield block;
         block = <Session>[];
         continue;
