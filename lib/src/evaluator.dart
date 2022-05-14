@@ -65,10 +65,15 @@ class ScheduleEvaluator
       if (nPosterToday > 0) {
         sawPoster = true;
         penalty.constraints += potentialPenalty;
+        if (verbose && potentialPenalty > 0)
+          print("Poster sessions are separated\n");
       } else if (sawPoster) potentialPenalty += POSTERS_SEPARATED;
 
       // Too many poster sessions in one day
-      if (nPosterToday > 1) penalty.constraints += MULTIPLE_POSTERS_PER_DAY;
+      if (nPosterToday > 1) {
+        penalty.constraints += MULTIPLE_POSTERS_PER_DAY;
+        if (verbose) print("Too many posters in one day: $nPosterToday\n");
+      }
     }
 
     int dayNumber = 0;
@@ -127,10 +132,14 @@ class ScheduleEvaluator
       // Penalize incorrect number of coffee breaks (should be 1)
       int nCoffeeBreaks = noFoodBlock.where((s) => s.isCoffee).length;
       penalty.cultural += (nCoffeeBreaks - 1).abs() * WRONG_NUM_COFFEE;
+      if (verbose && nCoffeeBreaks != 1)
+        print("Incorrect number of coffee breaks: $nCoffeeBreaks\n");
 
       // Penalize incorrect number of keynotes (should be 1)
       int nKeynotes = noFoodBlock.where((s) => s.isKeynote).length;
-      penalty.cultural += (nCoffeeBreaks - 1).abs() * WRONG_NUM_KEYNOTE;
+      penalty.cultural += (nKeynotes - 1).abs() * WRONG_NUM_KEYNOTE;
+      if (verbose && nKeynotes != 1)
+        print("Incorrect number of keynotes: $nKeynotes\n");
 
       // Keynotes should start days or be after lunch.
       for (final keynoteSession in noFoodBlock.where((s) => s.isKeynote)) {
@@ -191,13 +200,20 @@ class ScheduleEvaluator
     penalty.constraints +=
         LAST_DAY_LONG * max(0.0, lastDay.end.difference(END_TIME).inMinutes);
 
+    if (verbose && lastDay.end.difference(END_TIME).inMinutes > 0)
+      print("Last day is too long\n");
+
     // Look at all last day sessions
     for (BakedSession bs in lastDay.list) {
       // Reward things that were correctly scheduled on the final day
       if (bs.session.isFinalDay) penalty.constraints -= GOOD_FINAL_DAY_SESSION;
 
       // Penalize things that weren't
-      if (bs.session.notFinalDay) penalty.constraints += BAD_FINAL_DAY_SESSION;
+      if (bs.session.notFinalDay) {
+        penalty.constraints += BAD_FINAL_DAY_SESSION;
+        if (verbose)
+          print("${bs.session.name} should not be on the final day\n");
+      }
     }
 
     // Lunch hour should start at a culturally appropriate time.
