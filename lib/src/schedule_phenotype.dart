@@ -35,7 +35,7 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
         orderRangeCutOff = sessions.length * 5 {
     if (FINAL_HALF_DAY) {
       maxExtraLunchCount = max(0, maxExtraLunchCount - 1);
-      maxCoffeeBreaksCount -= 2;
+      maxCoffeeBreaksCount -= 1;
     }
 
     maxShortBreaksCount = sessionCount -
