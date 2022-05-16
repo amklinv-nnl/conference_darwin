@@ -105,6 +105,18 @@ class ScheduleEvaluator
         print(
             "Day $dayNumber should have $targetLunches lunches but have ${day.where((s) => s.isLunch).length}\n");
 
+      // Only this many coffee breaks per day. (Normally 2.)
+      var targetCoffeeBreaks = 2;
+      if (dayNumber == days.length && FINAL_HALF_DAY) targetCoffeeBreaks = 1;
+      var nCoffeeBreaks = day.where((s) => s.isCoffee).length;
+      if (targetCoffeeBreaks < nCoffeeBreaks) {
+        penalty.cultural +=
+            WRONG_NUM_COFFEE * (nCoffeeBreaks - targetCoffeeBreaks);
+        if (verbose)
+          print(
+              "Day $dayNumber should have $targetCoffeeBreaks coffee breaks but has $nCoffeeBreaks\n");
+      }
+
       // Keep the days not too long.
       penalty.awareness +=
           DAY_TOO_LONG * max(0, phenotype.getLength(day) - maxMinutesInDay);
@@ -129,11 +141,13 @@ class ScheduleEvaluator
         in phenotype.getBlocksBetweenLargeMeal(ordered, sessions)) {
       if (noFoodBlock.isEmpty) continue;
 
-      // Penalize incorrect number of coffee breaks (should be 1)
+      // Penalize incorrect number of coffee breaks (should be at most 1)
       int nCoffeeBreaks = noFoodBlock.where((s) => s.isCoffee).length;
-      penalty.cultural += (nCoffeeBreaks - 1).abs() * WRONG_NUM_COFFEE;
-      if (verbose && nCoffeeBreaks != 1)
-        print("Incorrect number of coffee breaks: $nCoffeeBreaks\n");
+      if (nCoffeeBreaks > 1) {
+        penalty.cultural += (nCoffeeBreaks - 1).abs() * WRONG_NUM_COFFEE;
+        if (verbose)
+          print("Incorrect number of coffee breaks: $nCoffeeBreaks\n");
+      }
 
       // Penalize incorrect number of keynotes (should be 1)
       int nKeynotes = noFoodBlock.where((s) => s.isKeynote).length;
