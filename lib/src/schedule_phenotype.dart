@@ -38,11 +38,8 @@ class Schedule extends Phenotype<int, ScheduleEvaluatorPenalty> {
       maxCoffeeBreaksCount -= 1;
     }
 
-    maxShortBreaksCount = sessionCount -
-        nDayBreaks -
-        maxExtraLunchCount -
-        maxCoffeeBreaksCount -
-        1;
+    maxShortBreaksCount =
+        sessionCount - nDayBreaks - maxExtraLunchCount - maxCoffeeBreaksCount;
 
     _geneCount = sessionCount +
         nDayBreaks +
