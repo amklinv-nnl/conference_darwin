@@ -118,11 +118,12 @@ class ScheduleEvaluator
       }
 
       // Keep the days not too long.
-      penalty.awareness +=
-          DAY_TOO_LONG * max(0, phenotype.getLength(day) - maxMinutesInDay);
-      if (verbose && phenotype.getLength(day) > maxMinutesInDay)
+      if (verbose && phenotype.getLength(day) > maxMinutesInDay) {
+        var extraLength = phenotype.getLength(day) - maxMinutesInDay;
+        penalty.awareness += DAY_TOO_LONG * pow(extraLength, 2);
         print(
             "Day $dayNumber should be $maxMinutesInDay minutes but is ${phenotype.getLength(day)}\n");
+      }
     }
 
     // Make sure coffee is available at regular intervals
@@ -211,11 +212,12 @@ class ScheduleEvaluator
 
     // Penalize when last day is too long.
     final lastDay = baked.days[baked.days.length];
-    penalty.constraints +=
-        LAST_DAY_LONG * max(0.0, lastDay.end.difference(END_TIME).inMinutes);
+    var extraLength = lastDay.end.difference(END_TIME).inMinutes;
+    if (extraLength > 0) {
+      penalty.constraints += LAST_DAY_LONG * pow(extraLength, 2);
 
-    if (verbose && lastDay.end.difference(END_TIME).inMinutes > 0)
-      print("Last day is too long\n");
+      if (verbose) print("Last day is too long\n");
+    }
 
     // Look at all last day sessions
     for (BakedSession bs in lastDay.list) {
